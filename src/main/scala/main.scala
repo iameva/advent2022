@@ -3,8 +3,14 @@ import java.util.PriorityQueue
 import scala.collection.JavaConverters._
 
 trait Puzzle {
+  def getDataFilePath: String =
+    s"./data/${getClass.getSimpleName.reverse.dropWhile(!_.isDigit).reverse}"
+
   def main(args: Array[String]): Unit = {
-    val input = Source.fromFile(args.head)
+    val inputFile = args.headOption.getOrElse {
+      getDataFilePath
+    }
+    val input = Source.fromFile(inputFile)
     println(solve(input.getLines))
   }
 
@@ -107,5 +113,33 @@ object day2b extends Puzzle {
       }
 
     score
+  }
+}
+
+object day3a extends Puzzle {
+  def solve(input: Iterator[String]): Any = {
+    input.map { string =>
+      val len = string.length / 2
+      val left = string.take(len).toSet
+      val right = string.drop(len).toSet
+      val single = left.intersect(right).toIterator.next()
+      if (single.toInt > 'a')
+        (single.toInt - 'a'.toInt) + 1
+      else (single.toInt - 'A'.toInt + 27)
+    }.sum
+  }
+}
+
+object day3b extends Puzzle {
+  def solve(input: Iterator[String]): Any = {
+    input
+      .grouped(3)
+      .map(_.map(_.toSet).reduce(_ intersect _).head)
+      .map { single =>
+        if (single.toInt > 'a'.toInt)
+          (single.toInt - 'a'.toInt) + 1
+        else (single.toInt - 'A'.toInt + 27)
+      }
+      .sum
   }
 }
