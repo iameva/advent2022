@@ -1,0 +1,13 @@
+**/target/*
+**/test-output/*
+.bsp
+.dotty-*
+.vscode/*
+.bloop
+.metals
+**/metals.sbt
+node_modules/*
+data
+app/src/main/assets/js/saaguan/*
+app/src/main/resources/dist/*
+
