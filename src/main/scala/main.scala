@@ -6,7 +6,19 @@ trait Puzzle {
   def getDataFilePath: String =
     s"./data/${getClass.getSimpleName.reverse.dropWhile(!_.isDigit).reverse}"
 
+  def tests: Seq[(String, Int)] = Nil
+
   def main(args: Array[String]): Unit = {
+    tests.zipWithIndex.foreach { case ((input, expected), idx) =>
+      val result = solve(
+        input.trim.split("\n").map(_.trim).iterator
+      )
+      val str = if (result == expected) { s"Success! $expected" }
+      else { s"FAIL!! expected $expected, but calculated $result" }
+
+      println(s"test $idx: $str")
+    }
+
     val inputFile = args.headOption.getOrElse {
       getDataFilePath
     }
@@ -14,11 +26,30 @@ trait Puzzle {
     println(solve(input.getLines))
   }
 
-  def solve(lines: Iterator[String]): Any
+  def solve(lines: Iterator[String]): Int
 }
 
 object day1a extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  override def tests = Seq(
+    (
+      """1000
+       |2000
+       |3000
+       |
+       |4000
+       |
+       |5000
+       |6000
+       |
+       |7000
+       |8000
+       |9000
+       |
+       |10000""".stripMargin,
+      24000
+    )
+  )
+  def solve(input: Iterator[String]): Int = {
     var max = 0
     var current = 0
     input
@@ -33,13 +64,36 @@ object day1a extends Puzzle {
             current += x.toInt
         }
       }
+    if (max < current) {
+      max = current
+    }
 
     max
   }
 }
 
 object day1b extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  override def tests = Seq(
+    (
+      """1000
+       |2000
+       |3000
+       |
+       |4000
+       |
+       |5000
+       |6000
+       |
+       |7000
+       |8000
+       |9000
+       |
+       |10000""".stripMargin,
+      45000
+    )
+  )
+
+  def solve(input: Iterator[String]): Int = {
     var current = 0
     val queue = new PriorityQueue[Int]
     input
@@ -53,13 +107,15 @@ object day1b extends Puzzle {
             current += x.toInt
         }
       }
+    queue.add(current)
+    if (queue.size > 3) queue.poll()
 
     queue.iterator().asScala.sum
   }
 }
 
 object day2a extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  def solve(input: Iterator[String]): Int = {
     var score = 0
     input
       .foreach { line =>
@@ -91,7 +147,7 @@ object day2a extends Puzzle {
 }
 
 object day2b extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  def solve(input: Iterator[String]): Int = {
     var score = 0
     input
       .foreach { line =>
@@ -117,7 +173,7 @@ object day2b extends Puzzle {
 }
 
 object day3a extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  def solve(input: Iterator[String]): Int = {
     input.map { string =>
       val len = string.length / 2
       val left = string.take(len).toSet
@@ -131,14 +187,15 @@ object day3a extends Puzzle {
 }
 
 object day3b extends Puzzle {
-  def solve(input: Iterator[String]): Any = {
+  def solve(input: Iterator[String]): Int = {
     input
       .grouped(3)
       .map(_.map(_.toSet).reduce(_ intersect _).head)
       .map { single =>
         if (single.toInt > 'a'.toInt)
-          (single.toInt - 'a'.toInt) + 1
-        else (single.toInt - 'A'.toInt + 27)
+          single.toInt - 'a'.toInt + 1
+        else
+          single.toInt - 'A'.toInt + 27
       }
       .sum
   }
