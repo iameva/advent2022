@@ -200,3 +200,67 @@ object day3b extends Puzzle {
       .sum
   }
 }
+
+object day4a extends Puzzle {
+  def getRange(str: String): (Int, Int) = {
+    str.split('-') match {
+      case Array(start, end) => (start.toInt, end.toInt)
+      case _                 => ???
+    }
+  }
+
+  override def tests = Seq(
+    (
+      """2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8""",
+      2
+    )
+  )
+  def solve(input: Iterator[String]): Int = {
+    input
+      .map(_.split(','))
+      .map { case Array(left, right) =>
+        val (l1, l2) = getRange(left)
+        val (r1, r2) = getRange(right)
+        if (l1 >= r1 && l2 <= r2) {
+          1
+        } else if (r1 >= l1 && r2 <= l2) {
+          1
+        } else {
+          0
+        }
+      }
+      .sum
+  }
+}
+
+object day4b extends Puzzle {
+  import day4a.getRange
+
+  override def tests = Seq(
+    (
+      """2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8""",
+      4
+    )
+  )
+  def solve(input: Iterator[String]): Int = {
+    input
+      .map(_.split(','))
+      .map { case Array(left, right) =>
+        val (l1, l2) = getRange(left)
+        val (r1, r2) = getRange(right)
+        if (l1 > r2 || r1 > l2) { 0 }
+        else { 1 }
+      }
+      .sum
+  }
+}
