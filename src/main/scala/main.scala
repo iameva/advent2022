@@ -1,17 +1,18 @@
 import scala.io.Source
 import java.util.PriorityQueue
+import java.util.ArrayDeque
 import scala.collection.JavaConverters._
 
 trait Puzzle {
   def getDataFilePath: String =
     s"./data/${getClass.getSimpleName.reverse.dropWhile(!_.isDigit).reverse}"
 
-  def tests: Seq[(String, Int)] = Nil
+  def tests: Seq[(String, Any)] = Nil
 
   def main(args: Array[String]): Unit = {
     tests.zipWithIndex.foreach { case ((input, expected), idx) =>
       val result = solve(
-        input.trim.split("\n").map(_.trim).iterator
+        input.split("\n").iterator
       )
       val str = if (result == expected) { s"Success! $expected" }
       else { s"FAIL!! expected $expected, but calculated $result" }
@@ -26,7 +27,7 @@ trait Puzzle {
     println(solve(input.getLines))
   }
 
-  def solve(lines: Iterator[String]): Int
+  def solve(lines: Iterator[String]): Any
 }
 
 object day1a extends Puzzle {
@@ -262,5 +263,95 @@ object day4b extends Puzzle {
         else { 1 }
       }
       .sum
+  }
+}
+
+object day5a extends Puzzle {
+  override def tests = Seq(
+    (
+      """    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
+
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2""",
+      "CMZ"
+    )
+  )
+
+  val MOVE_REGEX = "move (\\d+) from (\\d) to (\\d)".r
+
+  def solve(input: Iterator[String]): String = {
+    val stacks = Array.fill(10)(new ArrayDeque[Char])
+    input.takeWhile(_.nonEmpty).foreach { line =>
+      line.zipWithIndex.foreach { (c, i) =>
+        if (c.isLetter) {
+          val stackIdx = (i - 1) / 4
+          stacks(stackIdx).addFirst(c)
+        }
+      }
+    }
+    def printStacks = println(
+      stacks.map { s => s.toArray.mkString }.mkString("\n")
+    )
+
+    input
+      .foreach { case MOVE_REGEX(num, from, to) =>
+        val n = num.toInt
+        val f = stacks(from.toInt - 1)
+        val t = stacks(to.toInt - 1)
+
+        (0 until n).foreach { _ => t.addLast(f.removeLast()) }
+      }
+    stacks.flatMap(s => if (s.isEmpty) None else Some(s.getLast)).mkString("")
+  }
+}
+
+object day5b extends Puzzle {
+  override def tests = Seq(
+    (
+      """    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
+
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2""",
+      "MCD"
+    )
+  )
+
+  val MOVE_REGEX = "move (\\d+) from (\\d) to (\\d)".r
+
+  def solve(input: Iterator[String]): String = {
+    val stacks = Array.fill(10)(new ArrayDeque[Char])
+    input.takeWhile(_.nonEmpty).foreach { line =>
+      line.zipWithIndex.foreach { (c, i) =>
+        if (c.isLetter) {
+          val stackIdx = (i - 1) / 4
+          stacks(stackIdx).addFirst(c)
+        }
+      }
+    }
+    def printStacks = println(
+      stacks.map { s => s.toArray.mkString }.mkString("\n")
+    )
+
+    input
+      .foreach { case MOVE_REGEX(num, from, to) =>
+        val n = num.toInt
+        val f = stacks(from.toInt - 1)
+        val t = stacks(to.toInt - 1)
+        val tmp = new ArrayDeque[Char]
+
+        (0 until n).foreach { _ => tmp.addLast(f.removeLast()) }
+        (0 until n).foreach { _ => t.addLast(tmp.removeLast()) }
+      }
+    stacks.flatMap(s => if (s.isEmpty) None else Some(s.getLast)).mkString("")
   }
 }
