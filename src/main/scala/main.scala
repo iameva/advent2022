@@ -355,3 +355,47 @@ move 1 from 1 to 2""",
     stacks.flatMap(s => if (s.isEmpty) None else Some(s.getLast)).mkString("")
   }
 }
+
+object day6a extends Puzzle {
+  override def tests = Seq(
+    (
+      """bvwbjplbgvbhsrlpgdmjqwftvncz""",
+      5
+    )
+  )
+  def solve(input: Iterator[String]): Int = {
+    val current = new java.util.ArrayDeque[Char]
+    input.next.zipWithIndex.foreach { case (char, i) =>
+      current.addLast(char)
+      if (current.size > 4) {
+        current.removeFirst()
+      }
+      if (current.iterator.asScala.toSet.size == 4) {
+        return i + 1
+      }
+    }
+    0
+  }
+}
+
+object day6b extends Puzzle {
+  override def tests = Seq(
+    (
+      """bvwbjplbgvbhsrlpgdmjqwftvncz""",
+      23
+    ),
+  )
+  def solve(input: Iterator[String]): Int = {
+    val current = new java.util.ArrayDeque[Char]
+    input.next.zipWithIndex.foreach { case (char, i) =>
+      current.addLast(char)
+      if (current.size > 14) {
+        current.removeFirst()
+      }
+      if (current.iterator.asScala.toSet.size == 14) {
+        return i + 1
+      }
+    }
+    0
+  }
+}
