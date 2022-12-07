@@ -2,6 +2,7 @@ import scala.io.Source
 import java.util.PriorityQueue
 import java.util.ArrayDeque
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 trait Puzzle {
   def getDataFilePath: String =
@@ -397,5 +398,140 @@ object day6b extends Puzzle {
       }
     }
     0
+  }
+}
+
+object day7a extends Puzzle {
+  override def tests = Seq(
+    ("""$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k""",
+95437)
+  )
+
+  val CD = "\\$ cd (.*)".r
+  val LS = "$ ls"
+  val DIR = "dir (.*)".r
+  val FILE = "(\\d+) (.*)".r
+
+  def solve(input: Iterator[String]): Int = {
+    var currentDir = "/"
+    def allParents = {
+      Iterator.iterate(currentDir){ d => 
+          d.take(d.lastIndexOf('/'))
+        }
+        .takeWhile(_.nonEmpty)
+    }
+    val dirSizes = mutable.Map[String, Int]("/" -> 0)
+
+    input.foreach {
+      case CD(newDir) =>
+        if (newDir == "/") {
+          currentDir = "/"
+        } else if (newDir == "..") {
+          currentDir = currentDir.take(currentDir.lastIndexOf('/'))
+        } else {
+          currentDir += "/" + newDir
+        }
+      case LS =>
+      case FILE(size, name) =>
+        allParents.foreach { dir =>
+          dirSizes(dir) = dirSizes(dir) + size.toInt
+        }
+      case DIR(name) =>
+        dirSizes += (currentDir + "/" + name) -> 0
+    }
+
+    dirSizes.map(_._2).filter(_ <= 100000).sum
+  }
+}
+
+object day7b extends Puzzle {
+  override def tests = Seq(
+    ("""$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k""",
+24933642)
+  )
+
+  val CD = "\\$ cd (.*)".r
+  val LS = "$ ls"
+  val DIR = "dir (.*)".r
+  val FILE = "(\\d+) (.*)".r
+
+  def solve(input: Iterator[String]): Int = {
+    var currentDir = "/"
+    def allParents = {
+      Iterator.iterate(currentDir){ d => 
+          d.take(d.lastIndexOf('/'))
+        }
+        .takeWhile(_.nonEmpty)
+    }
+    val dirSizes = mutable.Map[String, Int]("/" -> 0)
+    var totalSize = 0
+
+    input.foreach {
+      case CD(newDir) =>
+        if (newDir == "/") {
+          currentDir = "/"
+        } else if (newDir == "..") {
+          currentDir = currentDir.take(currentDir.lastIndexOf('/'))
+        } else {
+          currentDir += "/" + newDir
+        }
+      case LS =>
+      case FILE(sizeStr, name) =>
+        val size = sizeStr.toInt
+        totalSize += size
+        allParents.foreach { dir =>
+          dirSizes(dir) = dirSizes(dir) + size.toInt
+        }
+      case DIR(name) =>
+        dirSizes += (currentDir + "/" + name) -> 0
+    }
+
+    val spaceLeft = 70000000 - totalSize
+    val numToDelete = 30000000 - spaceLeft
+    dirSizes.toSeq.map(_._2).sorted.iterator.filter(_ >= numToDelete).min
   }
 }
