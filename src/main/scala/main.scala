@@ -384,7 +384,7 @@ object day6b extends Puzzle {
     (
       """bvwbjplbgvbhsrlpgdmjqwftvncz""",
       23
-    ),
+    )
   )
   def solve(input: Iterator[String]): Int = {
     val current = new java.util.ArrayDeque[Char]
@@ -403,7 +403,8 @@ object day6b extends Puzzle {
 
 object day7a extends Puzzle {
   override def tests = Seq(
-    ("""$ cd /
+    (
+      """$ cd /
 $ ls
 dir a
 14848514 b.txt
@@ -426,7 +427,8 @@ $ ls
 8033020 d.log
 5626152 d.ext
 7214296 k""",
-95437)
+      95437
+    )
   )
 
   val CD = "\\$ cd (.*)".r
@@ -437,7 +439,8 @@ $ ls
   def solve(input: Iterator[String]): Int = {
     var currentDir = "/"
     def allParents = {
-      Iterator.iterate(currentDir){ d => 
+      Iterator
+        .iterate(currentDir) { d =>
           d.take(d.lastIndexOf('/'))
         }
         .takeWhile(_.nonEmpty)
@@ -468,7 +471,8 @@ $ ls
 
 object day7b extends Puzzle {
   override def tests = Seq(
-    ("""$ cd /
+    (
+      """$ cd /
 $ ls
 dir a
 14848514 b.txt
@@ -491,7 +495,8 @@ $ ls
 8033020 d.log
 5626152 d.ext
 7214296 k""",
-24933642)
+      24933642
+    )
   )
 
   val CD = "\\$ cd (.*)".r
@@ -502,7 +507,8 @@ $ ls
   def solve(input: Iterator[String]): Int = {
     var currentDir = "/"
     def allParents = {
-      Iterator.iterate(currentDir){ d => 
+      Iterator
+        .iterate(currentDir) { d =>
           d.take(d.lastIndexOf('/'))
         }
         .takeWhile(_.nonEmpty)
@@ -533,5 +539,139 @@ $ ls
     val spaceLeft = 70000000 - totalSize
     val numToDelete = 30000000 - spaceLeft
     dirSizes.toSeq.map(_._2).sorted.iterator.filter(_ >= numToDelete).min
+  }
+}
+
+object day8a extends Puzzle {
+  override val tests = Seq(
+    (
+      """30373
+25512
+65332
+33549
+35390""",
+      21
+    )
+  )
+  def solve(input: Iterator[String]): Int = {
+    val grid = input.map(_.map(_.toInt).toArray).toArray
+    val width = grid.head.length
+    val height = grid.length
+
+    val fromBottom = Array.fill(height)(Array.fill(width)(false))
+    val fromTop = Array.fill(height)(Array.fill(width)(false))
+    val fromLeft = Array.fill(height)(Array.fill(width)(false))
+    val fromRight = Array.fill(height)(Array.fill(width)(false))
+
+    (0 until width).foreach { i =>
+      var max = -1
+      (0 until height).foreach { j =>
+        val cur = grid(j)(i)
+        if (cur > max) {
+          fromTop(j)(i) = true
+          max = cur
+        }
+      }
+    }
+    (0 until width).foreach { i =>
+      var max = -1
+      (0 until height).foreach { negJ =>
+        val j = height - 1 - negJ
+        val cur = grid(j)(i)
+        if (cur > max) {
+          fromBottom(j)(i) = true
+          max = cur
+        }
+      }
+    }
+
+    (0 until height).foreach { j =>
+      var max = -1
+      (0 until width).foreach { negI =>
+        val i = width - 1 - negI
+        val cur = grid(j)(i)
+        if (cur > max) {
+          fromLeft(j)(i) = true
+          max = cur
+        }
+      }
+    }
+    (0 until height).foreach { j =>
+      var max = -1
+      (0 until width).foreach { i =>
+        val cur = grid(j)(i)
+        if (cur > max) {
+          fromRight(j)(i) = true
+          max = cur
+        }
+      }
+    }
+
+    var visibleTrees = 0
+    for {
+      i <- 0 until width
+      j <- 0 until height
+    } {
+      if (
+        fromBottom(i)(j) || fromTop(i)(j) || fromLeft(i)(j) || fromRight(i)(j)
+      ) {
+        visibleTrees += 1
+      }
+    }
+
+    visibleTrees
+  }
+}
+
+object day8b extends Puzzle {
+  override val tests = Seq(
+    (
+      """30373
+25512
+65332
+33549
+35390""",
+      8
+    )
+  )
+
+  def solve(lines: Iterator[String]): Int = {
+    val grid = lines.map(_.map(_.toInt - '0'.toInt).toArray).toArray
+    val width = grid.head.length
+    val height = grid.length
+    var max = 0
+    for {
+      i <- 0 until width
+      j <- 0 until height
+    } {
+      val cur = grid(j)(i)
+      val up = Iterator
+        .iterate(j - 1)(_ - 1)
+        .takeWhile(_ >= 0)
+        .find(j2 => j2 == 0 || grid(j2)(i) >= cur)
+        .map(j - _)
+        .getOrElse(0)
+      val down = Iterator
+        .iterate(j + 1)(_ + 1)
+        .takeWhile(_ < height)
+        .find(j2 => j2 == (height - 1) || grid(j2)(i) >= cur)
+        .map(_ - j)
+        .getOrElse(0)
+      val left = Iterator
+        .iterate(i - 1)(_ - 1)
+        .takeWhile(_ >= 0)
+        .find(i2 => i2 == 0 || grid(j)(i2) >= cur)
+        .map(i - _)
+        .getOrElse(0)
+      val right = Iterator
+        .iterate(i + 1)(_ + 1)
+        .takeWhile(_ < width)
+        .find(i2 => i2 == width - 1 || grid(j)(i2) >= cur)
+        .map(_ - i)
+        .getOrElse(0)
+      val score = up * down * right * left
+      if (score > max) max = score
+    }
+    max
   }
 }
