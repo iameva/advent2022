@@ -675,3 +675,105 @@ object day8b extends Puzzle {
     max
   }
 }
+
+case class Vector(x: Int, y: Int) {
+  def diff(other: Vector): Vector = {
+    Vector(x - other.x, y - other.y)
+  }
+  def add(dir: Vector): Vector = {
+    Vector(x + dir.x, y + dir.y)
+  }
+  def unitize: Vector = {
+    Vector(x.max(-1).min(1), y.max(-1).min(1))
+  }
+}
+object Vector {
+  val zero = Vector(0, 0)
+
+  val up = Vector(0, 1)
+  val down = Vector(0, -1)
+  val right = Vector(1, 0)
+  val left = Vector(-1, 0)
+}
+
+object day9a extends Puzzle {
+  override val tests = Seq(
+    (
+      """R 4
+U 4
+L 3
+D 1
+R 4
+D 1
+L 5
+R 2
+""",
+      13
+    )
+  )
+
+  def solve(lines: Iterator[String]): Int = {
+    val positions = mutable.Set(Vector.zero)
+    var head = Vector.zero
+    var tail = Vector.zero
+    lines.foreach { line =>
+      val Array(h, t) = line.split(" ")
+      val dir = h match {
+        case "U" => Vector.up
+        case "D" => Vector.down
+        case "L" => Vector.left
+        case "R" => Vector.right
+        case _   => ???
+      }
+      (0 until t.toInt).foreach { _ =>
+        head = head.add(dir)
+        val diff = head.diff(tail)
+        if (diff.x.abs > 1 || diff.y.abs > 1) {
+          tail = tail.add(diff.unitize)
+          positions.add(tail)
+        }
+      }
+    }
+    positions.size
+  }
+}
+
+object day9b extends Puzzle {
+  override def tests: Seq[(String, Any)] = Seq(
+    ("""R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20""",36)
+  )
+  override def solve(lines: Iterator[String]): Int = {
+    val positions = mutable.Set(Vector.zero)
+    val knots = Array.fill(10)(Vector.zero)
+    lines.foreach { line =>
+      val Array(h, t) = line.split(" ")
+      val dir = h match {
+        case "U" => Vector.up
+        case "D" => Vector.down
+        case "L" => Vector.left
+        case "R" => Vector.right
+        case _   => ???
+      }
+      (0 until t.toInt).foreach { _ =>
+        knots(0) = knots(0).add(dir)
+        for (x <- 1 until 10) {
+          val c = knots(x)
+          val p = knots(x - 1)
+          val diff = p.diff(c)
+          if (diff.x.abs > 1 || diff.y.abs > 1) {
+            knots(x) = c.add(diff.unitize)
+          }
+        }
+        positions.add(knots.last)
+      }
+    }
+    positions.size
+  }
+}
