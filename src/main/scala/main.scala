@@ -740,14 +740,17 @@ R 2
 
 object day9b extends Puzzle {
   override def tests: Seq[(String, Any)] = Seq(
-    ("""R 5
+    (
+      """R 5
 U 8
 L 8
 D 3
 R 17
 D 10
 L 25
-U 20""",36)
+U 20""",
+      36
+    )
   )
   override def solve(lines: Iterator[String]): Int = {
     val positions = mutable.Set(Vector.zero)
@@ -775,5 +778,234 @@ U 20""",36)
       }
     }
     positions.size
+  }
+}
+
+object day10a extends Puzzle {
+  override val tests = Seq(
+    (
+      """addx 15
+addx -11
+addx 6
+addx -3
+addx 5
+addx -1
+addx -8
+addx 13
+addx 4
+noop
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx 5
+addx -1
+addx -35
+addx 1
+addx 24
+addx -19
+addx 1
+addx 16
+addx -11
+noop
+noop
+addx 21
+addx -15
+noop
+noop
+addx -3
+addx 9
+addx 1
+addx -3
+addx 8
+addx 1
+addx 5
+noop
+noop
+noop
+noop
+noop
+addx -36
+noop
+addx 1
+addx 7
+noop
+noop
+noop
+addx 2
+addx 6
+noop
+noop
+noop
+noop
+noop
+addx 1
+noop
+noop
+addx 7
+addx 1
+noop
+addx -13
+addx 13
+addx 7
+noop
+addx 1
+addx -33
+noop
+noop
+noop
+addx 2
+noop
+noop
+noop
+addx 8
+noop
+addx -1
+addx 2
+addx 1
+noop
+addx 17
+addx -9
+addx 1
+addx 1
+addx -3
+addx 11
+noop
+noop
+addx 1
+noop
+addx 1
+noop
+noop
+addx -13
+addx -19
+addx 1
+addx 3
+addx 26
+addx -30
+addx 12
+addx -1
+addx 3
+addx 1
+noop
+noop
+noop
+addx -9
+addx 18
+addx 1
+addx 2
+noop
+noop
+addx 9
+noop
+noop
+noop
+addx -1
+addx 2
+addx -37
+addx 1
+addx 3
+noop
+addx 15
+addx -21
+addx 22
+addx -6
+addx 1
+noop
+addx 2
+addx 1
+noop
+addx -10
+noop
+noop
+addx 20
+addx 1
+addx 2
+addx 2
+addx -6
+addx -11
+noop
+noop
+noop""",
+      13140
+    )
+  )
+  override def solve(lines: Iterator[String]): Int = {
+    var x = 1
+    var cycle = 1
+    var result = 0
+    val interestingCycles = Set(
+      20, 60, 100, 140, 180, 220
+    )
+    def maybeRecord: Unit = {
+      if (interestingCycles.contains(cycle)) {
+        result += x * cycle
+      }
+    }
+    lines.map(_.split(" ")).foreach {
+      case Array("addx", int) =>
+        cycle += 1
+        maybeRecord
+
+        cycle += 1
+        x += int.toInt
+        maybeRecord
+      case Array("noop") =>
+        cycle += 1
+        maybeRecord
+    }
+
+    result
+  }
+}
+
+object day10b extends Puzzle {
+  override def tests = day10a.tests.map { case (a, _) =>
+    (
+      a,
+      """
+##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."""
+    )
+  }
+
+  override def solve(lines: Iterator[String]): Any = {
+    // sprite x position
+    var x = 1
+    var cycle = 1
+    var result = StringBuilder()
+    // x position of pixel being drawn
+    def pixelX: Int = (cycle - 1) % 40
+    def maybeRecord: Unit = {
+      val diff = pixelX - x
+      if (diff >= -1 && diff <= 1) {
+        result.append("#")
+      } else {
+        result.append(".")
+      }
+
+      //println(s"[$cycle] pix: $pixelX sprite: $x\n$result")
+    }
+    lines.map(_.split(" ")).foreach {
+      case Array("addx", int) =>
+        maybeRecord
+        cycle += 1
+        maybeRecord
+        cycle += 1
+        x += int.toInt
+      case Array("noop") =>
+        maybeRecord
+
+        cycle += 1
+    }
+
+    "\n" + result.toString.grouped(40).mkString("\n")
   }
 }
