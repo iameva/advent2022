@@ -991,7 +991,7 @@ object day10b extends Puzzle {
         result.append(".")
       }
 
-      //println(s"[$cycle] pix: $pixelX sprite: $x\n$result")
+      // println(s"[$cycle] pix: $pixelX sprite: $x\n$result")
     }
     lines.map(_.split(" ")).foreach {
       case Array("addx", int) =>
@@ -1007,5 +1007,195 @@ object day10b extends Puzzle {
     }
 
     "\n" + result.toString.grouped(40).mkString("\n")
+  }
+}
+
+object day11a extends Puzzle {
+  type MonkeyBusiness = BigInt
+
+  override def tests: Seq[(String, MonkeyBusiness)] = Seq(
+    (
+      """Monkey 0:
+  Starting items: 79, 98
+  Operation: new = old * 19
+  Test: divisible by 23
+    If true: throw to monkey 2
+    If false: throw to monkey 3
+
+Monkey 1:
+  Starting items: 54, 65, 75, 74
+  Operation: new = old + 6
+  Test: divisible by 19
+    If true: throw to monkey 2
+    If false: throw to monkey 0
+
+Monkey 2:
+  Starting items: 79, 60, 97
+  Operation: new = old * old
+  Test: divisible by 13
+    If true: throw to monkey 1
+    If false: throw to monkey 3
+
+Monkey 3:
+  Starting items: 74
+  Operation: new = old + 3
+  Test: divisible by 17
+    If true: throw to monkey 0
+    If false: throw to monkey 1
+""",
+      10605
+    )
+  )
+
+  enum Expression {
+    case Literal(x: Long)
+    case Old
+    case Add(left: Expression, right: Expression)
+    case Mult(left: Expression, right: Expression)
+    case Sub(left: Expression, right: Expression)
+    case Div(left: Expression, right: Expression)
+  }
+
+  def parseOperand(str: String): Expression = {
+    str match {
+      case "old" => Expression.Old
+      case _     => Expression.Literal(str.toInt)
+    }
+  }
+
+  def parseOp(str: String): Expression = {
+    str.split(" ") match {
+      case Array(left, op, right) =>
+        val l = parseOperand(left)
+        val r = parseOperand(right)
+        op match {
+          case "+" => Expression.Add(l, r)
+          case "-" => Expression.Sub(l, r)
+          case "*" => Expression.Mult(l, r)
+          case "/" => Expression.Div(l, r)
+          case x   => throw new RuntimeException(s"unknown op '$x'")
+        }
+      case other =>
+        throw new RuntimeException(s"unknown op str: ${other.toSeq}")
+    }
+  }
+
+  case class OpContext(old: Long) {
+    def execute(op: Expression): Long = {
+      op match {
+        case Expression.Literal(x) => x
+        case Expression.Old        => old
+        case Expression.Add(l, r)  => execute(l) + execute(r)
+        case Expression.Sub(l, r)  => execute(l) - execute(r)
+        case Expression.Mult(l, r) => execute(l) * execute(r)
+        case Expression.Div(l, r)  => execute(l) / execute(r)
+      }
+    }
+  }
+
+  case class Monkey(
+      items: ArrayDeque[Long],
+      operation: Expression,
+      test: Long,
+      trueIdx: Int,
+      falseIdx: Int
+  ) {
+    var numInspections = BigInt(0)
+  }
+
+  def parseMonkey(input: Iterator[String]): Monkey = {
+    var line = input.next()
+    val startingItems = line.dropWhile(!_.isDigit).split(", ").map(_.trim.toLong):w
+    
+    line = input.next()
+    val op = parseOp(line.dropWhile(_ != '=').drop(1).trim)
+    line = input.next()
+    val test = line.dropWhile(!_.isDigit).toInt
+    line = input.next()
+    val trueIdx = line.dropWhile(!_.isDigit).toInt
+    line = input.next()
+    val falseIdx = line.dropWhile(!_.isDigit).toInt
+    Monkey(
+      items = new ArrayDeque(startingItems.toSeq.asJava),
+      operation = op,
+      test = test,
+      trueIdx = trueIdx,
+      falseIdx = falseIdx
+    )
+  }
+
+  override def solve(lines: Iterator[String]): MonkeyBusiness = {
+    // parse Monkeys
+    val monkeys = lines.flatMap { line =>
+      if (line.startsWith("Monkey")) {
+        Some(parseMonkey(lines))
+      } else {
+        None
+      }
+    }.toArray
+
+    println(s" monkeys: \n\n${monkeys.mkString("\n")}")
+
+    // run 20 rounds (tracking item inspect count)
+    (0 until 20).foreach { round =>
+      monkeys.foreach { m =>
+        while (!m.items.isEmpty()) {
+          m.numInspections += 1
+          var item = m.items.removeFirst()
+          item = OpContext(item).execute(m.operation)
+          item = item / 3
+          val idx = if (item % m.test == 0) {
+            m.trueIdx
+          } else {
+            m.falseIdx
+          }
+          monkeys(idx).items.addLast(item)
+        }
+      }
+    }
+    // calculate monkey business
+    val Array(m1, m2) = monkeys.sortBy(-_.numInspections).take(2)
+    m1.numInspections * m2.numInspections
+  }
+}
+
+object day11b extends Puzzle {
+  import day11a._
+  override def tests = day11a.tests.map { case (a, _) => (a, 2713310158l) }
+
+  override def solve(lines: Iterator[String]): MonkeyBusiness = {
+    // parse Monkeys
+    val monkeys = lines.flatMap { line =>
+      if (line.startsWith("Monkey")) {
+        Some(parseMonkey(lines))
+      } else {
+        None
+      }
+    }.toArray
+
+    val totalTest = monkeys.map(_.test).reduce(_ * _)
+
+    println(s" monkeys: \n\n${monkeys.mkString("\n")}\n\n total test: $totalTest")
+
+    // run 20 rounds (tracking item inspect count)
+    (0 until 10000).foreach { round =>
+      monkeys.foreach { m =>
+        while (!m.items.isEmpty()) {
+          m.numInspections += 1
+          var item = m.items.removeFirst()
+          item = OpContext(item).execute(m.operation)
+          item = item % totalTest
+          val idx = if (item % m.test == 0) {
+            m.trueIdx
+          } else {
+            m.falseIdx
+          }
+          monkeys(idx).items.addLast(item)
+        }
+      }
+    }
+    // calculate monkey business
+    val Array(m1, m2) = monkeys.sortBy(-_.numInspections).take(2)
+    m1.numInspections * m2.numInspections
   }
 }
