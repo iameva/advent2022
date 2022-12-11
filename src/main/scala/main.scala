@@ -1105,8 +1105,9 @@ Monkey 3:
 
   def parseMonkey(input: Iterator[String]): Monkey = {
     var line = input.next()
-    val startingItems = line.dropWhile(!_.isDigit).split(", ").map(_.trim.toLong):w
-    
+    val startingItems =
+      line.dropWhile(!_.isDigit).split(", ").map(_.trim.toLong)
+
     line = input.next()
     val op = parseOp(line.dropWhile(_ != '=').drop(1).trim)
     line = input.next()
@@ -1134,7 +1135,7 @@ Monkey 3:
       }
     }.toArray
 
-    println(s" monkeys: \n\n${monkeys.mkString("\n")}")
+    // println(s" monkeys: \n\n${monkeys.mkString("\n")}")
 
     // run 20 rounds (tracking item inspect count)
     (0 until 20).foreach { round =>
@@ -1161,7 +1162,7 @@ Monkey 3:
 
 object day11b extends Puzzle {
   import day11a._
-  override def tests = day11a.tests.map { case (a, _) => (a, 2713310158l) }
+  override def tests = day11a.tests.map { case (a, _) => (a, 2713310158L) }
 
   override def solve(lines: Iterator[String]): MonkeyBusiness = {
     // parse Monkeys
@@ -1175,7 +1176,7 @@ object day11b extends Puzzle {
 
     val totalTest = monkeys.map(_.test).reduce(_ * _)
 
-    println(s" monkeys: \n\n${monkeys.mkString("\n")}\n\n total test: $totalTest")
+    // println(s" monkeys: \n\n${monkeys.mkString("\n")}\n\n total test: $totalTest")
 
     // run 20 rounds (tracking item inspect count)
     (0 until 10000).foreach { round =>
