@@ -1200,3 +1200,175 @@ object day11b extends Puzzle {
     m1.numInspections * m2.numInspections
   }
 }
+
+object day12a extends Puzzle {
+  override def tests: Seq[(String, Int)] = Seq(
+    (
+      """Sabqponm
+abcryxxl
+accszExk
+acctuvwj
+abdefghi""",
+      31
+    )
+  )
+
+  override def solve(lines: Iterator[String]): Int = {
+    val map = lines.filter(_.nonEmpty).toArray
+    val height = map.head.length
+    val width = map.length
+
+    def heightAt(v: Vector): Int = {
+      map(v.x)(v.y) match {
+        case 'E' => 'z'
+        case 'S' => 'a'
+        case x   => x
+      }
+    }
+
+    var current =
+      (0 until height)
+        .flatMap { y => (0 until width).map(Vector(_, y)) }
+        .find { v => map(v.x)(v.y) == 'S' }
+        .get
+
+    var target =
+      (0 until height)
+        .flatMap { y => (0 until width).map(Vector(_, y)) }
+        .find { v => map(v.x)(v.y) == 'E' }
+        .get
+
+    val distances = mutable.Map[Vector, Int]()
+    distances(current) = 0
+
+    def getNeighbors(p: Vector): Seq[Vector] = {
+      val cur = heightAt(p)
+      val result = Seq(
+        Vector(p.x, p.y + 1),
+        Vector(p.x, p.y - 1),
+        Vector(p.x + 1, p.y),
+        Vector(p.x - 1, p.y)
+      )
+        .filter { v =>
+          v.x >= 0 && v.x < width && v.y >= 0 && v.y < height
+        }
+        .filter { v =>
+          heightAt(v) <= cur + 1
+        }
+
+      result
+    }
+
+    val nextPos = mutable.ArrayDeque[Vector](current)
+
+    while (nextPos.nonEmpty) {
+      val cur = nextPos.removeHead()
+      val dist = distances(cur)
+      if (cur == target) {
+        return dist
+      }
+      getNeighbors(cur)
+        .filterNot(distances.isDefinedAt)
+        .foreach { n =>
+          distances(n) = dist + 1
+          nextPos.append(n)
+        }
+    }
+
+    0
+  }
+}
+
+object day12b extends Puzzle {
+  override def tests: Seq[(String, Int)] = Seq(
+    (
+      """Sabqponm
+abcryxxl
+accszExk
+acctuvwj
+abdefghi""",
+      29
+    )
+  )
+
+  override def solve(lines: Iterator[String]): Int = {
+    val map = lines.filter(_.nonEmpty).toArray
+    val height = map.head.length
+    val width = map.length
+
+    def heightAt(v: Vector): Int = {
+      map(v.x)(v.y) match {
+        case 'E' => 'z'
+        case 'S' => 'a'
+        case x   => x
+      }
+    }
+
+    val positions =
+      (0 until height)
+        .flatMap { y => (0 until width).map(Vector(_, y)) }
+
+    var current =
+      positions.find { v => map(v.x)(v.y) == 'S' }.get
+
+    var target =
+      positions.find { v => map(v.x)(v.y) == 'E' }.get
+
+    def getNeighbors(p: Vector): Seq[Vector] = {
+      val cur = heightAt(p)
+      val result = Seq(
+        Vector(p.x, p.y + 1),
+        Vector(p.x, p.y - 1),
+        Vector(p.x + 1, p.y),
+        Vector(p.x - 1, p.y)
+      )
+        .filter { v =>
+          v.x >= 0 && v.x < width && v.y >= 0 && v.y < height
+        }
+        .filter { v =>
+          heightAt(v) <= cur + 1
+        }
+
+      result
+    }
+
+    var shortestDistance = Integer.MAX_VALUE
+
+    positions
+      .filter(v => heightAt(v) == 'a')
+      .foreach { start =>
+        current = start
+
+      val distances = mutable.Map[Vector, Int]()
+      distances(current) = 0
+
+      val nextPos = mutable.ArrayDeque[Vector](current)
+
+      while (nextPos.nonEmpty) {
+        val cur = nextPos.removeHead()
+        val dist = distances(cur)
+        val nextDist = dist + 1
+        if (cur == target) {
+          if (dist < shortestDistance) {
+            shortestDistance = dist
+          }
+          nextPos.clear()
+        } else {
+          getNeighbors(cur)
+            .filter { n =>
+              distances.get(n) match {
+                case None    => true // valid neighbor
+                case Some(d) => nextDist < d
+              }
+            }
+            .foreach { n =>
+              distances(n) = dist + 1
+              nextPos.append(n)
+            }
+        }
+      }
+      }
+
+    shortestDistance
+  }
+}
