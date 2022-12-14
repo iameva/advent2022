@@ -3,6 +3,7 @@ import java.util.PriorityQueue
 import java.util.ArrayDeque
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util._
 
 trait Puzzle {
   def getDataFilePath: String =
@@ -1370,5 +1371,148 @@ abdefghi""",
       }
 
     shortestDistance
+  }
+}
+
+enum Packet {
+  case Integer(i: Int)
+  case List(l: Seq[Packet])
+}
+object Packet extends Ordering[Packet] {
+  def toString(p: Packet): String = p match {
+    case Packet.Integer(i) => i.toString
+    case Packet.List(l)    => "[" + l.map(toString).mkString(",") + "]"
+  }
+  def compare(l: Packet, r: Packet): Int = {
+    (l, r) match {
+      case (Packet.Integer(l), Packet.Integer(r)) =>
+        if (l < r) -1
+        else if (l == r) 0
+        else 1
+      case (Packet.List(l), Packet.List(r)) =>
+        var i = 0
+        val max = math.max(l.size, r.size)
+        while (i < max) {
+          (Try(l(i)), Try(r(i))) match {
+            case (Success(l), Success(r)) =>
+              val result = compare(l, r)
+              if (result != 0) return result
+            case (Success(_), _) => return 1
+            case (_, Success(_)) =>
+              return -1
+          }
+          i += 1
+        }
+        0
+      case (Packet.List(_), _) =>
+        compare(l, Packet.List(Seq(r)))
+      case (_, Packet.List(_)) =>
+        compare(Packet.List(Seq(l)), r)
+    }
+  }
+
+  class Parser(str: String) {
+    var idx = 0
+    private def consume(): Char = {
+      idx += 1
+      str(idx - 1)
+    }
+
+    private def peek(): Option[Char] = Try(str(idx)).toOption
+
+    def readPacket(): Packet = {
+      consume() match {
+        case '[' => // list
+          val buf = mutable.ListBuffer[Packet]()
+          while (peek() != Some(']')) {
+            buf.append(readPacket())
+            peek() match {
+              case Some(',') => consume()
+              case _         =>
+            }
+          }
+          assert(peek() == Some(']'))
+          consume()
+          Packet.List(buf.toSeq)
+        case c if c.isDigit =>
+          var value: Int = c - '0'
+          while (peek().exists(_.isDigit)) {
+            value *= 10
+            value += consume() - '0'
+          }
+          Packet.Integer(value)
+      }
+    }
+  }
+
+  def parse(str: String): Packet = {
+    Parser(str).readPacket()
+  }
+}
+
+object day13a extends Puzzle {
+  override def tests: Seq[(String, Int)] = Seq(
+    (
+      """[1,1,3,1,1]
+[1,1,5,1,1]
+
+[[1],[2,3,4]]
+[[1],4]
+
+[9]
+[[8,7,6]]
+
+[[4,4],4,4]
+[[4,4],4,4,4]
+
+[7,7,7,7]
+[7,7,7]
+
+[]
+[3]
+
+[[[]]]
+[[]]
+
+[1,[2,[3,[4,[5,6,7]]]],8,9]
+[1,[2,[3,[4,[5,6,0]]]],8,9]""",
+      13
+    )
+  )
+
+  override def solve(lines: Iterator[String]): Int = {
+    lines
+      .grouped(3)
+      .map(_.take(2))
+      .map(_.map(Packet.parse))
+      .zipWithIndex
+      .map { case (Seq(left, right), idx) =>
+        val result = if (Packet.compare(left, right) <= 0) { idx + 1 }
+        else { 0 }
+        // println(Packet.toString(left))
+        // println(Packet.toString(right))
+        // println(result)
+        // println()
+        result
+      }
+      .sum
+  }
+}
+
+object day13b extends Puzzle {
+  override def tests = day13a.tests.map { case (a, _) => (a, 140) }
+  override def solve(lines: Iterator[String]): Int = {
+    val dividerPackets = Seq(
+      Packet.parse("[[2]]"),
+      Packet.parse("[[6]]")
+    )
+    val allPackets = lines.filter(_.nonEmpty)
+    .map(Packet.parse)
+    .toSeq
+     ++ dividerPackets
+
+    val sorted = allPackets.sorted(Packet)
+
+    dividerPackets.map(sorted.indexOf).map(_ + 1).reduce(_ * _)
   }
 }
