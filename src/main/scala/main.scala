@@ -687,6 +687,9 @@ case class Vector(x: Int, y: Int) {
   def unitize: Vector = {
     Vector(x.max(-1).min(1), y.max(-1).min(1))
   }
+  def max(v: Vector): Vector = {
+    Vector(math.max(x, v.x), math.max(y, v.y))
+  }
 }
 object Vector {
   val zero = Vector(0, 0)
@@ -1514,5 +1517,165 @@ object day13b extends Puzzle {
     val sorted = allPackets.sorted(Packet)
 
     dividerPackets.map(sorted.indexOf).map(_ + 1).reduce(_ * _)
+  }
+}
+
+class Grid[T](default: => T) {
+  val map = mutable.Map[Vector, T]()
+  var max = Vector(0, 0)
+  def get(v: Vector): T = {
+    map.getOrElse(v, default)
+  }
+  def set(v: Vector, t: T): Unit = {
+    max = max.max(v)
+    map.put(v, t)
+  }
+}
+
+object day14a extends Puzzle {
+  override def tests: Seq[(String, Any)] = Seq(
+("""498,4 -> 498,6 -> 496,6
+503,4 -> 502,4 -> 502,9 -> 494,9
+""", 24)
+  )
+
+  override def solve(lines: Iterator[String]): Int = {
+    val surfaces = lines.map { line =>
+        line.split("->").map(_.trim).map { s => 
+          val Array(x, y) = s.trim.split(",") 
+          Vector(x.toInt, y.toInt)
+        }
+      }
+    val grid = new Grid('.')
+    surfaces.foreach { points =>
+      points.sliding(2, 1).foreach { case Array(a, b) =>
+        val line = if (a.x == b.x) {
+          (if (a.y < b.y) {
+            a.y to b.y
+          } else {
+            b.y to a.y
+          }).map(Vector(a.x, _))
+        } else {
+          (if (a.x < b.x) {
+            a.x to b.x
+          } else {
+            b.x to a.x
+          })
+          .map(Vector(_, a.y))
+        }
+        line.foreach(grid.set(_, '#'))
+      }
+      }
+    var abyss = false
+    var numSands = 0
+    while (abyss == false) {
+      // simulate one sand falling
+      // start
+      var c = Vector(500, 0)
+      var falling = true
+      while (abyss == false && falling == true) {
+        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1)).map { dir =>
+          val next = c.add(dir)
+          grid.get(next) match {
+            case '.' => // continue falling
+              c = next
+              true
+            case _ => false
+          }
+        }.find(identity)
+        if (success.isEmpty) {
+          grid.set(c, 'o')
+          falling = false
+        } else {
+          if (c.y >= grid.max.y) {
+            abyss = true
+          }
+        }
+      }
+
+      if (abyss == false) {
+        numSands += 1
+      }
+    }
+    numSands
+  }
+}
+
+object day14b extends Puzzle {
+  override def tests: Seq[(String, Any)] = Seq(
+("""498,4 -> 498,6 -> 496,6
+503,4 -> 502,4 -> 502,9 -> 494,9
+""", 93)
+  )
+
+  class MyGrid[T](default: => T) extends Grid[T](default) {
+    var floor = 0
+    var floorValue: T = _
+    def setFloor(y: Int, value: T) = {
+      floor = y
+      floorValue = value
+      }
+    override def get(v: Vector): T = {
+      if (v.y == floor) return floorValue
+      super.get(v)
+    }
+  }
+
+  override def solve(lines: Iterator[String]): Int = {
+    val surfaces = lines.map { line =>
+        line.split("->").map(_.trim).map { s => 
+          val Array(x, y) = s.trim.split(",") 
+          Vector(x.toInt, y.toInt)
+        }
+      }
+    val grid = new MyGrid('.')
+    surfaces.foreach { points =>
+      points.sliding(2, 1).foreach { case Array(a, b) =>
+        val line = if (a.x == b.x) {
+          (if (a.y < b.y) {
+            a.y to b.y
+          } else {
+            b.y to a.y
+          }).map(Vector(a.x, _))
+        } else {
+          (if (a.x < b.x) {
+            a.x to b.x
+          } else {
+            b.x to a.x
+          })
+          .map(Vector(_, a.y))
+        }
+        line.foreach(grid.set(_, '#'))
+      }
+      }
+    grid.setFloor(grid.max.y + 2, '#')
+    var reachedTop = false
+    var numSands = 0
+    while (reachedTop == false) {
+      // simulate one sand falling
+      // start
+      var c = Vector(500, -1)
+      var falling = true
+      while (falling == true) {
+        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1)).map { dir =>
+          val next = c.add(dir)
+          grid.get(next) match {
+            case '.' => // continue falling
+              c = next
+              true
+            case _ => false
+          }
+        }.find(identity)
+        if (success.isEmpty) {
+          grid.set(c, 'o')
+          falling = false
+        }
+      }
+      if (c == Vector(500, 0)) {
+        reachedTop = true
+      }
+      numSands += 1
+    }
+    numSands
   }
 }
