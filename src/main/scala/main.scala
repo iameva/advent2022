@@ -690,6 +690,12 @@ case class Vector(x: Int, y: Int) {
   def max(v: Vector): Vector = {
     Vector(math.max(x, v.x), math.max(y, v.y))
   }
+  def manhattanDistance(v: Vector): Int = {
+    (x - v.x).abs + (y - v.y).abs
+  }
+  def divide(d: Int): Vector = {
+    Vector(x / d, y / d)
+  }
 }
 object Vector {
   val zero = Vector(0, 0)
@@ -1509,10 +1515,11 @@ object day13b extends Puzzle {
       Packet.parse("[[2]]"),
       Packet.parse("[[6]]")
     )
-    val allPackets = lines.filter(_.nonEmpty)
-    .map(Packet.parse)
-    .toSeq
-     ++ dividerPackets
+    val allPackets = lines
+      .filter(_.nonEmpty)
+      .map(Packet.parse)
+      .toSeq
+      ++ dividerPackets
 
     val sorted = allPackets.sorted(Packet)
 
@@ -1534,38 +1541,41 @@ class Grid[T](default: => T) {
 
 object day14a extends Puzzle {
   override def tests: Seq[(String, Any)] = Seq(
-("""498,4 -> 498,6 -> 496,6
+    (
+      """498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9
-""", 24)
+""",
+      24
+    )
   )
 
   override def solve(lines: Iterator[String]): Int = {
     val surfaces = lines.map { line =>
-        line.split("->").map(_.trim).map { s => 
-          val Array(x, y) = s.trim.split(",") 
-          Vector(x.toInt, y.toInt)
-        }
+      line.split("->").map(_.trim).map { s =>
+        val Array(x, y) = s.trim.split(",")
+        Vector(x.toInt, y.toInt)
       }
+    }
     val grid = new Grid('.')
     surfaces.foreach { points =>
       points.sliding(2, 1).foreach { case Array(a, b) =>
         val line = if (a.x == b.x) {
           (if (a.y < b.y) {
-            a.y to b.y
-          } else {
-            b.y to a.y
-          }).map(Vector(a.x, _))
+             a.y to b.y
+           } else {
+             b.y to a.y
+           }).map(Vector(a.x, _))
         } else {
           (if (a.x < b.x) {
-            a.x to b.x
-          } else {
-            b.x to a.x
-          })
-          .map(Vector(_, a.y))
+             a.x to b.x
+           } else {
+             b.x to a.x
+           })
+            .map(Vector(_, a.y))
         }
         line.foreach(grid.set(_, '#'))
       }
-      }
+    }
     var abyss = false
     var numSands = 0
     while (abyss == false) {
@@ -1574,15 +1584,17 @@ object day14a extends Puzzle {
       var c = Vector(500, 0)
       var falling = true
       while (abyss == false && falling == true) {
-        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1)).map { dir =>
-          val next = c.add(dir)
-          grid.get(next) match {
-            case '.' => // continue falling
-              c = next
-              true
-            case _ => false
+        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1))
+          .map { dir =>
+            val next = c.add(dir)
+            grid.get(next) match {
+              case '.' => // continue falling
+                c = next
+                true
+              case _ => false
+            }
           }
-        }.find(identity)
+          .find(identity)
         if (success.isEmpty) {
           grid.set(c, 'o')
           falling = false
@@ -1603,9 +1615,12 @@ object day14a extends Puzzle {
 
 object day14b extends Puzzle {
   override def tests: Seq[(String, Any)] = Seq(
-("""498,4 -> 498,6 -> 496,6
+    (
+      """498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9
-""", 93)
+""",
+      93
+    )
   )
 
   class MyGrid[T](default: => T) extends Grid[T](default) {
@@ -1614,7 +1629,7 @@ object day14b extends Puzzle {
     def setFloor(y: Int, value: T) = {
       floor = y
       floorValue = value
-      }
+    }
     override def get(v: Vector): T = {
       if (v.y == floor) return floorValue
       super.get(v)
@@ -1623,31 +1638,31 @@ object day14b extends Puzzle {
 
   override def solve(lines: Iterator[String]): Int = {
     val surfaces = lines.map { line =>
-        line.split("->").map(_.trim).map { s => 
-          val Array(x, y) = s.trim.split(",") 
-          Vector(x.toInt, y.toInt)
-        }
+      line.split("->").map(_.trim).map { s =>
+        val Array(x, y) = s.trim.split(",")
+        Vector(x.toInt, y.toInt)
       }
+    }
     val grid = new MyGrid('.')
     surfaces.foreach { points =>
       points.sliding(2, 1).foreach { case Array(a, b) =>
         val line = if (a.x == b.x) {
           (if (a.y < b.y) {
-            a.y to b.y
-          } else {
-            b.y to a.y
-          }).map(Vector(a.x, _))
+             a.y to b.y
+           } else {
+             b.y to a.y
+           }).map(Vector(a.x, _))
         } else {
           (if (a.x < b.x) {
-            a.x to b.x
-          } else {
-            b.x to a.x
-          })
-          .map(Vector(_, a.y))
+             a.x to b.x
+           } else {
+             b.x to a.x
+           })
+            .map(Vector(_, a.y))
         }
         line.foreach(grid.set(_, '#'))
       }
-      }
+    }
     grid.setFloor(grid.max.y + 2, '#')
     var reachedTop = false
     var numSands = 0
@@ -1657,15 +1672,17 @@ object day14b extends Puzzle {
       var c = Vector(500, -1)
       var falling = true
       while (falling == true) {
-        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1)).map { dir =>
-          val next = c.add(dir)
-          grid.get(next) match {
-            case '.' => // continue falling
-              c = next
-              true
-            case _ => false
+        val success = Iterator(Vector(0, 1), Vector(-1, 1), Vector(1, 1))
+          .map { dir =>
+            val next = c.add(dir)
+            grid.get(next) match {
+              case '.' => // continue falling
+                c = next
+                true
+              case _ => false
+            }
           }
-        }.find(identity)
+          .find(identity)
         if (success.isEmpty) {
           grid.set(c, 'o')
           falling = false
@@ -1677,5 +1694,114 @@ object day14b extends Puzzle {
       numSands += 1
     }
     numSands
+  }
+}
+
+case class Sensor(pos: Vector, closest: Vector) {
+  val dist = pos.manhattanDistance(closest)
+  def outline: Iterator[Vector] = {
+    val d = dist + 1
+    Iterator
+      .iterate(Vector(pos.x + d, pos.y))(_.add(Vector(-1, 1)))
+      .take(d)
+    ++
+    Iterator
+      .iterate(Vector(pos.x - d, pos.y))(_.add(Vector(1, -1)))
+      .take(d)
+    ++
+    Iterator
+      .iterate(Vector(pos.x, pos.y + d))(_.add(Vector(-1, -1)))
+      .take(d)
+    ++
+    Iterator
+      .iterate(Vector(pos.x, pos.y - d))(_.add(Vector(1, 1)))
+      .take(d)
+  }
+}
+
+object day15a extends Puzzle {
+  override def tests = Seq(
+    (
+      """row=10
+Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+Sensor at x=9, y=16: closest beacon is at x=10, y=16
+Sensor at x=13, y=2: closest beacon is at x=15, y=3
+Sensor at x=12, y=14: closest beacon is at x=10, y=16
+Sensor at x=10, y=20: closest beacon is at x=10, y=16
+Sensor at x=14, y=17: closest beacon is at x=10, y=16
+Sensor at x=8, y=7: closest beacon is at x=2, y=10
+Sensor at x=2, y=0: closest beacon is at x=2, y=10
+Sensor at x=0, y=11: closest beacon is at x=2, y=10
+Sensor at x=20, y=14: closest beacon is at x=25, y=17
+Sensor at x=17, y=20: closest beacon is at x=21, y=22
+Sensor at x=16, y=7: closest beacon is at x=15, y=3
+Sensor at x=14, y=3: closest beacon is at x=15, y=3
+Sensor at x=20, y=1: closest beacon is at x=15, y=3
+""",
+      26
+    )
+  )
+  val SENSOR =
+    """Sensor at x=(-?[0-9]*), y=(-?[0-9]*): closest beacon is at x=(-?[0-9]*), y=(-?[0-9]*)""".r
+  val ROW = """row=(-?[0-9]*)""".r
+  override def solve(lines: Iterator[String]): Int = {
+    var row = 2000000
+    val sensors = lines.flatMap {
+      case SENSOR(x1, y1, x2, y2) =>
+        Some(Sensor(Vector(x1.toInt, y1.toInt), Vector(x2.toInt, y2.toInt)))
+      case ROW(r) =>
+        row = r.toInt
+        None
+      case "" =>
+        None
+      case x => throw RuntimeException(s"failed at $x")
+    }.toSeq
+
+    val mid = sensors.map(_.pos).reduce(_.add(_)).divide(sensors.size)
+    val maxDist = sensors.map(_.dist).max
+    val max = sensors.map(_.pos).map(_.x).max + maxDist
+    val min = sensors.map(_.pos).map(_.x).min - maxDist
+
+    (min to max).iterator.map { x =>
+      val v = Vector(x, row)
+      if (
+        !sensors.exists(s => s.closest == v || s.pos == v) &&
+        sensors.exists { s =>
+          s.pos.manhattanDistance(v) <= s.dist
+        }
+      ) {
+        1
+      } else {
+        0
+      }
+    }.sum
+  }
+}
+
+object day15b extends Puzzle {
+  import day15a._
+  override def tests = day15a.tests.map { case (a, b) => (a, 56000011) }
+  override def solve(lines: Iterator[String]): Long = {
+    var row = 2000000
+    val sensors = lines.flatMap {
+      case SENSOR(x1, y1, x2, y2) =>
+        Some(Sensor(Vector(x1.toInt, y1.toInt), Vector(x2.toInt, y2.toInt)))
+      case ROW(r) =>
+        row = r.toInt
+        None
+      case "" =>
+        None
+      case x => throw RuntimeException(s"failed at $x")
+    }.toSeq
+
+    val limit = row * 2
+    val beacon = sensors.iterator
+      .flatMap(_.outline)
+      .filter(v => v.x >= 0 && v.x <= limit && v.y >= 0 && v.y <= limit)
+      .find { v =>
+        !sensors.exists(s => s.pos.manhattanDistance(v) <= s.dist)
+      }
+      .get
+    beacon.x * 4000000L + beacon.y
   }
 }
