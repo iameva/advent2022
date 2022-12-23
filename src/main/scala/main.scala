@@ -1805,3 +1805,14 @@ object day15b extends Puzzle {
     beacon.x * 4000000L + beacon.y
   }
 }
+
+class Graph[T] {
+  val nodes = mutable.Map[String, T]()
+  val edges = mutable.Map[String, mutable.Set[String]]()
+  def addNode(name: String, node: T): Unit = {
+    nodes.put(name, node)
+  }
+  def addEdge(from: String, to: String): Unit = {
+    edges.getOrElseUpdate(from, mutable.Set()).add(to)
+  }
+}
