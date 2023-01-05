@@ -60,7 +60,7 @@ object day16a extends Puzzle {
           .toMap
         room -> costs
     }.toMap
-    println(s"roomRoutes: ${roomRoutes.toSeq.sorted.mkString("\n")}")
+    // println(s"roomRoutes: ${roomRoutes.toSeq.sorted.mkString("\n")}")
 
     def findMax(node: String, state: State): Int = {
       if (state.timeLeft <= 0) return state.released
@@ -108,11 +108,10 @@ object day16b extends Puzzle {
   )
 
   case class State(
-      you: String,
-      elephant: String,
-      timeLeft: Int = 30,
-      released: Int = 0,
-      openedValves: Set[String] = Set()
+      movers: Seq[(String, Int)],
+      timeLeft: Int,
+      released: Int,
+      openedValves: Seq[String]
   )
 
   override def solve(lines: Iterator[String]): Int = {
@@ -135,7 +134,7 @@ object day16b extends Puzzle {
             queue.append((neighbor :: room :: rest, steps + 1))
           }
       }
-      return -1
+      throw new RuntimeException("WTF")
     }
 
     val roomRoutes: Map[String, Map[String, Int]] = rooms.keySet.iterator.map {
@@ -149,29 +148,52 @@ object day16b extends Puzzle {
           .toMap
         room -> costs
     }.toMap
-    println(s"roomRoutes: ${roomRoutes.toSeq.sorted.mkString("\n")}")
+    // println(s"roomRoutes: ${roomRoutes.toSeq.sorted.mkString("\n")}")
+
+    val interestingValves = rooms.filter(_._2._1 > 0).size
+    def factorial(n: Long): Long = if (n == 1) n else n * factorial(n - 1)
+    println(
+      s"num valves: ${interestingValves} combos: ${factorial(interestingValves.toLong)}"
+    )
 
     def findMax(state: State): Int = {
       if (state.timeLeft <= 0) return state.released
 
-      val (thisRate, _) = rooms(node)
-      val neighbors = roomRoutes(node)
-        .filterKeys(k => !state.openedValves.contains(k))
+      val moverIdx = state.movers
+        .lastIndexWhere(_._2 == state.timeLeft)
+
+      val mover = state.movers(moverIdx)._1
+
+      val neighbors = roomRoutes(mover)
+        .filter { case (k, time) =>
+          ((state.timeLeft - time) > 1) &&
+          !state.openedValves.contains(k)
+        }
 
       if (neighbors.nonEmpty) {
         neighbors.iterator.map { case (neighbor, time) =>
           val nextTime = state.timeLeft - time - 1
+          val nextMovers = state.movers.updated(moverIdx, neighbor -> nextTime)
           val nextState = State(
-            timeLeft = nextTime,
+            movers = nextMovers,
+            timeLeft = nextMovers.map(_._2).max,
             released = state.released + rooms(neighbor)._1 * nextTime,
-            openedValves = state.openedValves + neighbor
+            openedValves = state.openedValves :+ neighbor
           )
-          findMax(neighbor, nextState)
+          findMax(nextState)
         }.max
       } else {
+        // println(s"final! ${state.released}")
         state.released
       }
     }
-    findMax(State("AA", "AA", 26, 0, Set("AA")))
+    findMax(
+      State(
+        movers = Seq("AA" -> 26, "AA" -> 26),
+        timeLeft = 26,
+        released = 0,
+        Seq("AA")
+      )
+    )
   }
 }
